@@ -61,10 +61,6 @@ resource "google_compute_subnetwork" "private2" {
   }
 }
 
-resource "google_sql_database_instance" "name" {
-  
-}
-
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
 resource "google_compute_router" "router" {
   name    = "router"
