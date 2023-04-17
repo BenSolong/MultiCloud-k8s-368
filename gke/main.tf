@@ -1,5 +1,9 @@
+variable "project" {
+  default = "effortless-leaf-383907"
+}
+
 provider "google" {
-  project     = "effortless-leaf-383907"
+  project     = "${var.project}"
   region      = "us-central1"
 }
 
@@ -59,6 +63,10 @@ resource "google_compute_subnetwork" "private2" {
     range_name    = "k8s-service-range"
     ip_cidr_range = "10.60.16.0/20"
   }
+}
+
+resource "google_sql_database_instance" "name" {
+  
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
@@ -138,7 +146,7 @@ resource "google_container_cluster" "primary" {
   }
 
   workload_identity_config {
-    workload_pool = "effortless-leaf-383907.svc.id.goog"
+    workload_pool = "${var.project}.svc.id.goog"
   }
 
   ip_allocation_policy {
