@@ -2,9 +2,13 @@ variable "project" {
   default = "effortless-leaf-383907"
 }
 
+variable "region" {
+  default = "asia-east2"
+}
+
 provider "google" {
   project     = "${var.project}"
-  region      = "us-central1"
+  region      = "${var.region}"
 }
 
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/google_project_service
@@ -34,7 +38,7 @@ resource "google_compute_network" "main" {
 resource "google_compute_subnetwork" "private" {
   name                     = "private"
   ip_cidr_range            = "10.0.0.0/18"
-  region                   = "us-central1"
+  region                   = "${var.region}"
   network                  = google_compute_network.main.id
   private_ip_google_access = true
 
@@ -51,7 +55,7 @@ resource "google_compute_subnetwork" "private" {
 resource "google_compute_subnetwork" "private2" {
   name                     = "private2"
   ip_cidr_range            = "10.0.64.0/18"
-  region                   = "us-central1"
+  region                   = "${var.region}"
   network                  = google_compute_network.main.id
   private_ip_google_access = true
 
@@ -72,7 +76,7 @@ resource "google_sql_database_instance" "name" {
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_router
 resource "google_compute_router" "router" {
   name    = "router"
-  region  = "us-central1"
+  region  = "${var.region}"
   network = google_compute_network.main.id
 }
 
@@ -80,7 +84,7 @@ resource "google_compute_router" "router" {
 resource "google_compute_router_nat" "nat" {
   name   = "nat"
   router = google_compute_router.router.name
-  region = "us-central1"
+  region = "${var.region}"
 
   source_subnetwork_ip_ranges_to_nat = "LIST_OF_SUBNETWORKS"
   nat_ip_allocate_option             = "MANUAL_ONLY"
@@ -118,7 +122,7 @@ resource "google_compute_firewall" "allow-ssh" {
 # https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/container_cluster
 resource "google_container_cluster" "primary" {
   name                     = "primary"
-  location                 = "us-central1-a"
+  location                 = "${var.region}"
   remove_default_node_pool = true
   initial_node_count       = 1
   network                  = google_compute_network.main.self_link
@@ -129,7 +133,7 @@ resource "google_container_cluster" "primary" {
 
   # Optional, if you want multi-zonal cluster
   node_locations = [
-    "us-central1-b"
+    "asia-east1"
   ]
 
   addons_config {
@@ -238,7 +242,7 @@ resource "google_container_node_pool" "spot" {
 resource "google_compute_instance" "vm1" {
   name         = "vm1"
   machine_type = "f1-micro"
-  zone         = "us-central1-a"
+  zone         = "${var.region}"
 
   boot_disk {
     initialize_params {
@@ -263,7 +267,7 @@ resource "google_compute_instance" "vm1" {
 resource "google_compute_instance" "vm2" {
   name         = "vm2"
   machine_type = "f1-micro"
-  zone         = "us-central1-a"
+  zone         = "${var.region}"
 
   boot_disk {
     initialize_params {
@@ -283,4 +287,25 @@ resource "google_compute_instance" "vm2" {
 
     // Apply the firewall rule to allow external IPs to access this instance
     tags = ["http-server"]
+}
+
+resource "google_sql_database_instance" "instance" {
+name = "database-instance"
+database_version = "MYSQL_8_0"
+region = "${var.region}"
+settings {
+tier = "db-f1-micro"
+}
+}
+resource "google_sql_database" "database" {
+name = "mydatabase"
+instance = "${google_sql_database_instance.instance.name}"
+charset = "utf8"
+collation = "utf8_general_ci"
+}
+resource "google_sql_user" "users" {
+name = "root"
+instance = "${google_sql_database_instance.instance.name}"
+host = "%"
+password = "mypassw0rd"
 }
