@@ -1,5 +1,5 @@
 variable "project" {
-  default = "effortless-leaf-383907"
+  default = "gke-project-384210"
 }
 
 variable "region" {
@@ -120,7 +120,7 @@ resource "google_container_cluster" "primary" {
   name                     = "primary"
   location                 = "${var.region}"
   remove_default_node_pool = true
-  initial_node_count       = 1
+  initial_node_count       = 2
   network                  = google_compute_network.main.self_link
   subnetwork               = google_compute_subnetwork.private.self_link
   logging_service          = "logging.googleapis.com/kubernetes"
@@ -129,7 +129,7 @@ resource "google_container_cluster" "primary" {
 
   # Optional, if you want multi-zonal cluster
   node_locations = [
-    "asia-east1"
+    "${var.region}-b"
   ]
 
   addons_config {
@@ -238,7 +238,7 @@ resource "google_container_node_pool" "spot" {
 resource "google_compute_instance" "vm1" {
   name         = "vm1"
   machine_type = "f1-micro"
-  zone         = "${var.region}"
+  zone         = "${var.region}-a"
 
   boot_disk {
     initialize_params {
@@ -263,7 +263,7 @@ resource "google_compute_instance" "vm1" {
 resource "google_compute_instance" "vm2" {
   name         = "vm2"
   machine_type = "f1-micro"
-  zone         = "${var.region}"
+  zone         = "${var.region}-a"
 
   boot_disk {
     initialize_params {
@@ -289,6 +289,7 @@ resource "google_sql_database_instance" "instance" {
 name = "database-instance"
 database_version = "MYSQL_8_0"
 region = "${var.region}"
+deletion_protection = false
 settings {
 tier = "db-f1-micro"
 }
