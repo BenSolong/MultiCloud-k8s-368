@@ -119,3 +119,43 @@ resource "azurerm_public_ip" "default-Public-ip" {
     environment = "dev"
   }
 }
+
+resource "azurerm_lb" "main" {
+  name                = "main-lb"
+  location            = azurerm_resource_group.default.location
+  resource_group_name = azurerm_resource_group.default.name
+
+  frontend_ip_configuration {
+    name                 = "PublicIPAddress"
+    public_ip_address_id = azurerm_public_ip.default-Public-ip.id
+  }
+}
+
+resource "azurerm_lb_backend_address_pool" "main" {
+  name            = "main-backend-pool"
+  loadbalancer_id = azurerm_lb.main.id
+}
+
+resource "azurerm_lb_probe" "main" {
+  name                = "main-probe"
+  loadbalancer_id     = azurerm_lb.main.id
+  protocol            = "Http"
+  request_path        = "/"
+  port                = 80
+  interval_in_seconds = 5
+  number_of_probes    = 2
+}
+
+resource "azurerm_lb_rule" "http" {
+  name                           = "main-http-rule"
+  loadbalancer_id                = azurerm_lb.main.id
+  protocol                       = "Tcp"
+  frontend_port                  = 80
+  backend_port                   = 80
+  frontend_ip_configuration_name = "PublicIPAddress"
+  probe_id                       = azurerm_lb_probe.main.id
+}
+
+output "load_balancer_ip" {
+  value = azurerm_public_ip.default-Public-ip.ip_address
+}
